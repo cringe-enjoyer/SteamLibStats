@@ -1,5 +1,6 @@
 package com.example.cursach.utils;
 
+import android.os.StrictMode;
 import android.util.Log;
 
 import com.example.cursach.model.WishListGame;
@@ -11,13 +12,16 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
 
 public class UserWishListParser {
-    public static void parse(String steamID) throws IOException {
-        URL url = new URL("https://store.steampowered.com/wishlist/id/" + steamID + "/wishlistdata/"); //Список желаемого
+    public static List<WishListGame> getWishListGames(String steamID) throws IOException {
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(policy); //Разобраться с потоками
+        URL url = new URL("https://store.steampowered.com/wishlist/profiles/" + steamID + "/wishlistdata/"); //Список желаемого
         HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
         con.setRequestMethod("GET");
         con.setConnectTimeout(5000);
@@ -32,14 +36,20 @@ public class UserWishListParser {
                 response.append(inputLine);
             }
             in.close();
-            Gson gson = new Gson();
-            Type type = new TypeToken<Map<Integer, WishListGame>>(){}.getType();
-            Map<Integer, WishListGame> listGame = gson.fromJson(response.toString(), type);
-            for (WishListGame game :
-                    listGame.values()) {
-                Log.d("log", "parce: " + game);
-            }
+            return parseWishList(response.toString());
         }
+        else
+            return null;
     }
 
+    private static List<WishListGame> parseWishList(String response) {
+        Gson gson = new Gson();
+        Type type = new TypeToken<Map<Integer, WishListGame>>(){}.getType();
+        Map<Integer, WishListGame> wishList = gson.fromJson(response, type);
+        /*for (WishListGame game :
+                wishList.values()) {
+            Log.d("log", "parce: " + game);
+        }*/
+        return (List<WishListGame>) wishList.values();
+    }
 }
