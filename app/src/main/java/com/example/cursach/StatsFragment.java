@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.github.mikephil.charting.charts.PieChart;
+import com.github.mikephil.charting.components.Description;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
@@ -20,16 +21,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class StatsFragment extends Fragment {
+    private static final String STEAM_ID = "steamID";
+    private static final String GAME_ID = "gameID";
+    private static final String GAME_NAME = "gameName";
+    private String steamID;
+    private int gameID = -1;
+    private String gameName;
 
     public StatsFragment() {
 
     }
 
-    public static StatsFragment newInstance() {
-
+    public static StatsFragment newInstance(String steamID, int gameID) {
         Bundle args = new Bundle();
-
         StatsFragment fragment = new StatsFragment();
+        args.putString(STEAM_ID, steamID);
+        args.putInt(GAME_ID, gameID);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    public static StatsFragment newInstance(String steamID, int gameID, String gameName) {
+        Bundle args = new Bundle();
+        StatsFragment fragment = new StatsFragment();
+        args.putString(STEAM_ID, steamID);
+        args.putInt(GAME_ID, gameID);
+        args.putString(GAME_NAME, gameName);
         fragment.setArguments(args);
         return fragment;
     }
@@ -37,6 +54,11 @@ public class StatsFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            steamID = getArguments().getString(STEAM_ID);
+            gameID = getArguments().getInt(GAME_ID);
+            gameName = getArguments().getString(GAME_NAME);
+        }
     }
 
     @Nullable
@@ -46,11 +68,16 @@ public class StatsFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View result = inflater.inflate(R.layout.fragment_stats, container, false);
         PieChart chart = (PieChart) result.findViewById(R.id.pieChart);
+        chart.setData(getAchievementsData(steamID, gameID));
+        Description description = new Description();
+        description.setText(gameName);
+        chart.setDescription(description);
         return result;
     }
 
-    public PieData getAchievementsData(String steamID, int gameID) { //Надо сделать диаграмму где показаны сколько
-        // получено достижений и сколько осталось
+    public PieData getAchievementsData(String steamID, int gameID) {
+        if (steamID == null || gameID == -1)
+            return null;
         List<Achievement> userGameAchievements = SteamAPIConnector.getUserGameAchievements(gameID, steamID);
         List<PieEntry> entries = new ArrayList<>();
         int receivedAch = 0;
